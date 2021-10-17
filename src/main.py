@@ -86,7 +86,7 @@ def send_to_master(update: Update, context: CallbackContext) -> None:
     reply_keyboard = [[f'yes allow {user_id}', f'no, do not allow {user_id}']]
 
     context.bot.send_message(
-        chat_id=f"@{CONFIG['master_telegram_id']}",
+        chat_id=f"{CONFIG['master_telegram_id']}",
         text=msg,
         parse_mode='HTML',
         reply_markup=ReplyKeyboardMarkup(
@@ -104,6 +104,13 @@ def cancel(update: Update, context: CallbackContext) -> int:
     return ConversationHandler.END
 
 
+def get_id(update: Update, context: CallbackContext) -> int:
+    '''
+    the sole purpose of this function is to get the id of the 
+    master for editing the configuration file.
+    '''
+    update.message.reply_text(update.message.from_user.id)
+
 def main():
     global CONFIG
     c = Config('config.cfg')
@@ -114,6 +121,7 @@ def main():
 
     dispatcher.add_handler(CommandHandler("start", start_command))
     dispatcher.add_handler(CommandHandler("help", help_command))
+    dispatcher.add_handler(CommandHandler("id", get_id))
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('provision', provision_command)],
@@ -124,6 +132,8 @@ def main():
         fallbacks=[CommandHandler('cancel', cancel)]
     )
     dispatcher.add_handler(conv_handler)
+
+    
 
     updater.start_polling()
     updater.idle()
