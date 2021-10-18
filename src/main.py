@@ -73,25 +73,34 @@ def get_full_name(update: Update) -> str:
     return name
 
 
+def get_username(update: Update) -> str:
+    username = update.message.from_user.username
+    if username:
+        return f'@{username}'
+    else:
+        return '0'  # 0 means the person doesn't have a username.
+
+
 def send_to_master(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Your request is being processed!!'
                               '\nI will notify you when it is finished.'
                               )
 
     # message to be sent to the master
-    msg = f"User: <b>{get_full_name(update)}</b>\n"
+    msg = f"User: <b>{get_full_name(update)}</b> \n"
+    msg += f"Username: {get_username(update)} \n"
     msg += f'wants access to the operating system: <b>{update.message.text}</b>\n'
-    msg += '\nDo you want me to give access to him??'
+    msg += '\nDo you want me to give access to him/her??'
     user_id = update.message.from_user.id
-    reply_keyboard = [[f'yes allow {user_id}', f'no, do not allow {user_id}']]
 
     context.bot.send_message(
         chat_id=f"{CONFIG['master_telegram_id']}",
         text=msg,
         parse_mode='HTML',
-        reply_markup=ReplyKeyboardMarkup(
-            reply_keyboard, one_time_keyboard=True,
-        )
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton('yes allow', callback_data=f'y_{user_id}_{get_full_name(update)}'),
+            InlineKeyboardButton('no, do not allow', callback_data=f'n_{user_id}_{get_full_name(update)}')]
+        ])
     )
 
     return ConversationHandler.END
@@ -106,24 +115,56 @@ def cancel(update: Update, context: CallbackContext) -> int:
 
 def get_id(update: Update, context: CallbackContext) -> int:
     '''
-    the sole purpose of this function is to get the id of the 
+    the sole purpose of this function is to get the id of the
     master for editing the configuration file.
     '''
     update.message.reply_text(update.message.from_user.id)
+    update.message.reply_text(get_username(update))
+
+def send_result_to_user(update: Update, context: CallbackContext):
+    query=update.callback_query
+    query.answer()
+    data=query.data
+    data=data.split('_')
+    if data[0] == 'y':
+        # the vm has been successfully provisioned by the master
+        msg="Your request for the vm has been <b>SUCCESSFULLY ACCEPTED</b>!!!"
+        # TODO: add all of the informationt the user needs to connect to
+        # the vm to the msg variable
+
+        # TODO: add the user with the vmid to a database.
+
+        context.bot.send_message(
+            chat_id=data[1],
+            text=msg,
+            parse_mode='HTML',
+        )
+        query.edit_message_text(f"You have given access to {data[2]}")
+    elif data[0] == 'n':
+        msg="Your request for the vm has been <b>DENIED</b>!!!"
+
+        context.bot.send_message(
+            chat_id=data[1],
+            text=msg,
+            parse_mode='HTML',
+        )
+        query.edit_message_text(f"You have DENIED access to {data[2]}")
+    else:
+        logger.info("ERROR WITH CALLBACK")
 
 def main():
     global CONFIG
-    c = Config('config.cfg')
-    CONFIG = c.get_data()
+    c=Config('config.cfg')
+    CONFIG=c.get_data()
 
-    updater = Updater(CONFIG['token'])
-    dispatcher = updater.dispatcher
+    updater=Updater(CONFIG['token'])
+    dispatcher=updater.dispatcher
 
     dispatcher.add_handler(CommandHandler("start", start_command))
     dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("id", get_id))
 
-    conv_handler = ConversationHandler(
+    conv_handler=ConversationHandler(
         entry_points=[CommandHandler('provision', provision_command)],
         states={
             ACCEPT_AND_REQUEST_MASTER: [MessageHandler(
@@ -133,7 +174,10 @@ def main():
     )
     dispatcher.add_handler(conv_handler)
 
-    
+    # call_handler = CallbackQueryHandler(bug_or_feed, pattern='^(y_***)|(n_****)$')
+    # TODO: need to read regex and imporve the one below
+    call_handler=CallbackQueryHandler(send_result_to_user)
+    dispatcher.add_handler(call_handler)
 
     updater.start_polling()
     updater.idle()
