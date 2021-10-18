@@ -1,0 +1,16 @@
+---
+bot_info :
+  token : #the token name here 
+  botname : servidora 
+  bug_report_id : #telegram id of the person that will get the bug reports
+  master_telegram_id :  #the telegram id of the person who provisions the vms
+
+proxmox:
+  host:
+  user:
+  password:
+  template_vms:
+    - name : 'Ubuntu 20.4'
+      vm_id : 9100
+
+
