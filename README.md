@@ -1,5 +1,5 @@
-# servidora
-a telegram bot for creating virtual machines
+#  <em>servidora</em>
 
-# about the name
-servidora is spanish for server. It makes sense since the bot just serves humans by creating virtual machines.
+a telegram bot for automating virtual machine provisioning.
+
+This is part of my **serveEthiopia project**, a project aimed at providing resources for for fellow Ethiopians. 
