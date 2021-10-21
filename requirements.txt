@@ -8,5 +8,6 @@ PyYAML == 6.0
 # servidora/src/pveapi/vm.py: 1
 proxmoxer == 1.2.0
 
-# servidora/src/main.py: 7
-python_telegram_bot == 13.7
+# servidora/src/main.py: 1,2
+pyTelegramBotAPI == 4.1.1
+

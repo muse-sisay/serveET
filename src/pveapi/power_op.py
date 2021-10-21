@@ -37,7 +37,7 @@ def power_off(proxmox ,node, vmID) :
             msg= proxmox.post(f"nodes/{node}/qemu/{vmID}/status/shutdown")
             return {"msg" : msg, "success" : 1 }
         else :
-            return {"msg": "VM already running", "success" : 0 }
+            return {"msg": "VM is powred off", "success" : 0 }
     else :
         return {"msg" : status['msg'], "success": 0}
 
@@ -52,6 +52,6 @@ def reboot(proxmox ,node, vmID):
             msg= proxmox.post(f"nodes/{node}/qemu/{vmID}/status/reboot")
             return {"msg" : msg, "success" : 1 }
         else :
-            return {"msg": "VM already running", "success" : 0 }
+            return {"msg": "VM is powered OFF, do you mean to turn the vm ON", "success" : 0 }
     else :
         return {"msg" : status['msg'], "success": 0}
