@@ -1,0 +1,21 @@
+--- 
+CMD : 'Greetings'
+STR_START : "*Thank you* {} for being our first alpah tester.
+Type /provision to get started."
+STR_MAINTENACE : "⚠ *Bot is down for maintenance*. \n Report this issue @musesisay"
+STR_GUIDE : ""
+STR_SELECT_OP : "Select Operation:"
+STR_NO_VM_ASSIGNED: "You have *no* vm assigned to you. Please /provision to request a vm"
+STR_VM_POWER_ON : "Your vm has powered *on*"
+STR_VM_POWER_OFF : "Your vm has powered *off*"
+STR_VM_POWER_REBOOT_START : "Your vm is *rebooting*"
+STR_VM_POWER_REBOOT_FINISH : "Your vm has finished *rebooting*"
+STR_VM_STATUS_POWER: "*VM STATUS* \n
+                      \t*STATUS*: _{}_"
+STR_VM_STATUS: "\n\t *OS INFO* : _{}_ \n
+                \t *UPTIME*: _{}_ \n
+                \t *Rx/Tx*: _{}_ / _{}_ \n
+                \t *IP ADDRESS* \n"
+STR_VM_STATUS_IP : "\t \t _{}_ : {}"
+STR_VM_STATUS_POWER_ON_MSG : "\n\n Type _\"Power On\"_ to turn your vm *on*."
+STR_LOGIN : "To access your vm {} /control after login to view list of commands"

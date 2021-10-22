@@ -17,7 +17,7 @@ sql_create_config_table =  """CREATE TABLE vm_config (
                             )
                             """
 
-
+# INSERT
 sql_insert_requests_table = """INSERT INTO request (requester_id, requester_name , os_type, status) 
                             VALUES(?, ? ,?,?) """    
 
@@ -27,11 +27,16 @@ sql_insert_machine_table = """ INSERT INTO machine ( vm_id ,  owner_id , owner_n
 sql_insert_config_table =  """INSERT INTO vm_config (next_vm_id)
                             VALUES (?) """          
 
+# UPDATE
 sql_update_satus= """UPDATE request SET status=? 
                     WHERE requester_id=? """    
 
 sql_update_next_vm_id = "UPDATE vm_config SET next_vm_id = next_vm_id + 1"
 
+# SELECT
 sql_select_config_table = "SELECT next_vm_id FROM vm_config WHERE rowid=1;"
 
 sql_select_user_from_machine = "SELECT * FROM machine WHERE owner_id = ?"
+
+sql_select_request = "SELECT * FROM request WHERE rowid=?"
+

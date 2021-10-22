@@ -1,18 +1,23 @@
 ---
-db_name :
-bot_info :
-  token : #the token name here 
-  botname : servidora 
-  admin_id:
+db_name : 
+
+bot:
+  token : 
+  botname : 
+  admin_id :
 
 proxmox:
-  host:
-  node:
-  user:
+  host : 
+  node : 
+  user : 
   password:
-  vm_id:
-  template_vms:
-    - name : 'Ubuntu 20.4'
-      vm_id : 9100
 
-
+template_vm:
+    user: 
+    password: 
+    vm_id: 
+    template_vms:
+      - name : 
+        vm_id : 
+      - name : 
+        vm_id : 

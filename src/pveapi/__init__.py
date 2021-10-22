@@ -1,8 +1,8 @@
 from proxmoxer import ProxmoxAPI
-from util import config_parser
+from util import CONFIG, parser
 
 
-proxmox_host , proxmox_user, proxmox_pass = config_parser.get_proxmox_creds()
+proxomox_cred = CONFIG['proxmox']
 
-proxmox = ProxmoxAPI(proxmox_host, user=proxmox_user,
-                     password=proxmox_pass, verify_ssl=False)
+proxmox = ProxmoxAPI(proxomox_cred['host'], user=proxomox_cred['user'],
+                     password=proxomox_cred['password'], verify_ssl=False)
