@@ -1,23 +1,22 @@
 ---
-db_name : 
+db_name : serve_ET
 
 bot:
-  token : 
-  botname : 
-  admin_id :
+  token : # telegram toke id generated using Bot Father
+  admin_id : # telegram id of server's admin
 
 proxmox:
-  host : 
-  node : 
-  user : 
-  password:
+  host : # ip or FQDN of proxmox server
+  node : # proxmox node
+  user : # user to authenticate as
+  token: 
+    name : 
+    value : 
 
 template_vm:
-    user: 
-    password: 
-    vm_id: 
-    template_vms:
-      - name : 
-        vm_id : 
+    user: # default user for vm
+    password: # defalt password for vm
+    vm_id: # start of vm id 
+    template_vms: # list of template vm's
       - name : 
         vm_id : 
