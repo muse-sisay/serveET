@@ -15,11 +15,13 @@ from db import db_file
 from db import helper
 
 import datetime
+import logging
 
-
+from pprint import pprint
 
 bot = telebot.TeleBot(CONFIG['bot']['token'])
-# conn= db.create_connection(db.db_file)
+# logger = telebot.logger
+# telebot.logger.setLevel(logging.DEBUG)
 
 
 # - command handler for start and help 
@@ -88,7 +90,7 @@ def reboot_machine(message ,  data):
     msg = power_op.reboot(proxmox , CONFIG['proxmox']['node'] , data[0])
     if msg['success'] == 1 :
         # Machine has been rebooted
-        msg = util.string_format(STRINGS['STR_VM_POWER_REBOOT'], '')
+        msg = util.string_format(STRINGS['STR_VM_POWER_REBOOT_START'], '')
         bot.send_message(message.chat.id ,msg, parse_mode="MarkdownV2")
         # Update the message once the machine has rebooted
     else :
@@ -123,9 +125,9 @@ def machine_status(message, data) :
         msg += util.string_format(STRINGS['STR_VM_STATUS'], os_info, uptime , net_in , net_out)
 
         # ip addresses (local , tailscale)
-        for nic  in nics['msg']:
-            msg += util.string_format(STRINGS['STR_VM_STATUS_IP'], nic['if'] , nic['ip'] )
-    
+        if nics['success'] == 1 :
+            for nic  in nics['msg']:
+                msg += util.string_format(STRINGS['STR_VM_STATUS_IP'], nic['if'] , nic['ip'] )
        
     else :
         msg += util.string_format(STRINGS['STR_VM_STATUS_POWER_ON_MSG'],'')
