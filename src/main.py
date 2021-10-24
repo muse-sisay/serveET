@@ -1,9 +1,11 @@
 import telebot
 from telebot import types
+from telebot import custom_filters
 
 from pveapi import proxmox
 from pveapi import power_op
 from pveapi import status
+from pveapi import vm
 
 from util import CONFIG
 from util import util
@@ -16,6 +18,7 @@ from db import helper
 
 import datetime
 import logging
+import sqlite3
 
 from pprint import pprint
 
@@ -29,6 +32,256 @@ bot = telebot.TeleBot(CONFIG['bot']['token'])
 def start(message):
     msg = util.string_format(STRINGS['STR_START'], message.chat.first_name)
     bot.send_message(message.chat.id , msg , parse_mode="MarkdownV2")
+
+@bot.message_handler(commands=['provision'])
+def provision(message):
+    # check  if user already has a vm
+    # manage
+    # accept terms of service
+    data=''
+    try : 
+        conn = helper.create_connection(db_file)
+        data = helper.get_user_from_machine(conn, message.chat.id)
+        conn.close()
+    except sqlite3.Error as e :
+        print(e)
+
+    if not data :
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        itembtn1 = types.KeyboardButton(STRINGS['STR_TERMS_OF_SERVICE_ACCEPT'])
+        itembtn2 = types.KeyboardButton(STRINGS['STR_TERMS_OF_SERVICE_REJECT'])
+        markup.add(itembtn1 , itembtn2)
+
+        msg= util.string_format(STRINGS['STR_TERMS_OF_SERVICE'], '')
+        bot.send_message(message.chat.id, msg, reply_markup=markup ,  parse_mode="MarkdownV2")
+        bot.set_state(message.chat.id, 1)
+
+    else :
+        msg = util.string_format(STRINGS['STR_ALREADY_PROVISIONED'], '')
+        bot.send_message(message.chat.id, msg,  parse_mode="MarkdownV2")
+
+# TODO Cancel state
+
+@bot.message_handler(state=1)
+@bot.message_handler(text=[STRINGS['STR_TERMS_OF_SERVICE_ACCEPT'],STRINGS['STR_PROVISION_CONFIRMATION_NO']])
+def os_selection(message):
+
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True,one_time_keyboard=True,row_width = 2)
+    [ markup.add(types.KeyboardButton(os['name'])) for os in CONFIG['template_vm']['template_vms']]
+
+    msg = util.string_format(STRINGS['STR_SELECT_OS'], '')
+    bot.send_message(message.chat.id, msg,reply_markup=markup ,   parse_mode="MarkdownV2")
+    bot.set_state(message.chat.id, 2)
+
+# TODO TERMS OF SERVICE DISAGREE
+
+@bot.message_handler(state=2)
+@bot.message_handler(text=[ os['name'] for os in CONFIG['template_vm']['template_vms']])
+def confirmation(message):
+    selection = message.text
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    itembtn1 = types.KeyboardButton(STRINGS['STR_PROVISION_CONFIRMATION_YES'])
+    itembtn2 = types.KeyboardButton(STRINGS['STR_PROVISION_CONFIRMATION_NO'])
+    markup.add(itembtn1, itembtn2)
+
+    msg = util.string_format(STRINGS['STR_PROVISION_CONFIRMATION'], selection)
+
+    bot.send_message(message.chat.id, msg, reply_markup=markup ,  parse_mode="MarkdownV2")
+    bot.set_state(message.chat.id, 3)
+    
+    with bot.retrieve_data(message.chat.id) as data:
+        data['os'] = selection
+
+# TODO Wrong os selection
+
+@bot.message_handler(state=3, text=[STRINGS['STR_PROVISION_CONFIRMATION_NO']])
+def back_to_os_selection(message):
+    bot.set_state(message.chat.id, 1)
+
+@bot.message_handler(state=3, text=[STRINGS['STR_PROVISION_CONFIRMATION_YES']])
+def checkout(message):
+   
+    # send chekcout message to user
+    msg= util.string_format(STRINGS['STR_PROVISION_CHECKOUT'], '')
+    bot.send_message(message.chat.id, msg, parse_mode="MarkdownV2")
+
+    # insert to request db
+    insert_request(message)
+    # notify admin
+    nofify_admin(message)
+    # Delete state
+    bot.delete_state(message.chat.id)
+
+def insert_request(message):
+
+    info = get_requester_info(message)
+    try :
+        conn= helper.create_connection(db_file)
+        helper.insert_request(conn, info)
+        conn.close()
+    except sqlite3.Error as e :
+        print(e) # print for now
+
+def get_request(requester_id):
+
+    try :
+        conn= helper.create_connection(db_file)
+        data= helper.get_request(conn, requester_id)
+        conn.close()
+        return data
+    except sqlite3.Error as e :
+        print(e) # print for now
+
+def update_request( requester_id , status):
+    
+    try :
+        conn= helper.create_connection(db_file)
+        data= helper.update_request(conn, requester_id, status)
+        conn.close()
+        return data
+    except sqlite3.Error as e :
+        print(e) # print for now
+
+def insert_machine(data):
+    try :
+        conn= helper.create_connection(db_file)
+        data= helper.insert_machine(conn, data)
+        conn.close()
+        return data
+    except sqlite3.Error as e :
+        print(e) # print for now
+
+def get_vm_id():
+    try :
+        conn= helper.create_connection(db_file)
+        data= helper.get_vm_id(conn)
+        conn.close()
+        return data
+    except sqlite3.Error as e :
+        print(e) # print for now
+
+def increment_vm_id():
+    try :
+        conn= helper.create_connection(db_file)
+        data= helper.increment_vm_id(conn)
+        conn.close()
+        return data
+    except sqlite3.Error as e :
+        print(e) # print for now
+
+def delete_request(requester_id):
+    try :
+        conn= helper.create_connection(db_file)
+        data= helper.delete_request(conn, requester_id)
+        conn.close()
+    except sqlite3.Error as e :
+        print(e) # print for now
+
+def get_requester_info(message):
+
+    info = {}
+    info['request_time'] = datetime.datetime.now()
+    info['requester_id'] = message.chat.id
+    info['requesters_name'] = message.chat.first_name 
+    info['requesters_username'] = f'(@{message.chat.username})' if message.chat.username else ''
+    with bot.retrieve_data(message.chat.id) as data:
+        info['os'] = data['os']
+    return info
+
+def nofify_admin(message):
+
+    requester_info = get_requester_info(message)
+
+    callback_data_accept = f"{{'status' : 'accepted', 'requester_id': {requester_info['requester_id']} }}"
+    callback_data_deny= f"{{'status' : 'denied', 'requester_id': {requester_info['requester_id']} }}"
+
+    markup = types.InlineKeyboardMarkup()
+    itembtn1= types.InlineKeyboardButton(STRINGS['STR_PROVISION_REQUEST_GRANT'], callback_data=callback_data_accept)
+    itembtn2= types.InlineKeyboardButton(STRINGS['STR_PROVISION_REQUEST_DENY'], callback_data=callback_data_deny)
+    markup.add(itembtn1, itembtn2)
+    
+    msg = util.string_format(STRINGS['STR_PROVISION_REQUEST'], requester_info['request_time'],requester_info['requester_id'], requester_info['requesters_username'] , "pending", requester_info['requesters_name'] , requester_info['os'])
+    
+    bot.send_message(CONFIG['bot']['admin_id'], msg, reply_markup=markup, parse_mode="MarkdownV2")
+
+
+@bot.callback_query_handler(func=lambda call: util.string_to_dict(call.data)['status'] =="accepted")
+def request_accepted (call) :
+
+    requester_id = util.string_to_dict(call.data)['requester_id']
+
+    # read request form db
+    data= get_request(requester_id)
+    print(data)
+    
+    # update request
+    update_request(requester_id, "accepted")
+    # insert server
+    insert_machine(data)
+
+    # clone the vm 
+    # TODO on a new thread
+    status = clone_vm(data)
+
+    bot.answer_callback_query(call.id, "Request granted")
+
+    if status['success'] == 1:
+        # send message to requester
+        # congraulations
+        msg = util.string_format(STRINGS['STR_PROVISION_ACCEPTED'], data[1])
+        bot.send_message(requester_id, msg, parse_mode="MarkdownV2")
+
+        # updated admin message
+        msg = call.message.text.replace('pending', 'accepted')
+        msg = util.string_format(msg, '')
+        bot.edit_message_text (msg, call.message.chat.id, call.message.message_id, parse_mode="MarkdownV2")
+    else :
+        msg = call.message.text.replace('pending', 'ERROR')
+        msg += "\n\n{status['msg]}"
+        msg = util.string_format(msg, '')
+        bot.edit_message_text (msg, call.message.chat.id, call.message.message_id, parse_mode="MarkdownV2")
+
+def clone_vm(data):
+
+    # get current vm id
+    vm_id = get_vm_id()
+    # increment vm id
+    increment_vm_id()
+
+    new_vm ={'newid': vm_id,
+            'description':f'{data[1]} vm',
+            'full':1,
+            'name':f"{data[1]}-los-{data[4].lower().replace(' ', '')}"
+            }
+
+    for template_vms in CONFIG['template_vm']['template_vms']:
+        if template_vms['name'] == data[4] :
+            clone_vm_id = template_vms['vm_id']
+
+    msg = vm.clone_vm(proxmox, CONFIG['proxmox']['node'], clone_vm_id ,new_vm)
+
+    return  msg
+    
+
+
+@bot.callback_query_handler(func=lambda call: util.string_to_dict(call.data)['status'] =="denied")
+def request_denied (call) :
+
+    requester_id = util.string_to_dict(call.data)['requester_id']
+
+    # remove request
+    delete_request(requester_id)
+
+    # notify user
+    msg = util.string_format(STRINGS['STR_PROVISION_REJECTED'], '')
+    bot.send_message(requester_id, msg, parse_mode="MarkdownV2")
+
+    # updated the message
+    bot.answer_callback_query(call.id, "Request denied")
+
+    msg = call.message.text.replace('pending', 'rejected')
+    msg = util.string_format(msg, '')
+    bot.edit_message_text (msg, call.message.chat.id, call.message.message_id, parse_mode="MarkdownV2")
 
 @bot.message_handler(commands=['control'])
 def control(message):
@@ -53,7 +306,7 @@ def power_control(message):
         conn = helper.create_connection(db_file)
         data = helper.get_user_from_machine(conn, message.chat.id)
         conn.close()
-    except Error as e :
+    except sqlite3.Error as e :
         print(e)
 
 
@@ -150,7 +403,7 @@ def login_url(message):
         conn = helper.create_connection(db_file)
         data = helper.get_user_from_machine(conn, message.chat.id)
         conn.close()
-    except Error as e :
+    except sqlite3.Error as e :
         print(e)
 
     power_status = status.get_vmstat(proxmox, CONFIG['proxmox']['node'], data[0])['msg']['status']
@@ -170,9 +423,12 @@ def login_url(message):
 @bot.message_handler(func=lambda m: True)
 def maintenance(message):
 
-    msg= util.string_format(STRINGS['STR_MAINTENACE'], '')
+    msg= util.string_format(STRINGS['STR_MAINTENANCE'], '')
     bot.send_message(message.chat.id,msg, parse_mode="MarkdownV2" )
 
 # if __name__  == 'main' :
+bot.add_custom_filter(custom_filters.StateFilter(bot))
+bot.add_custom_filter(custom_filters.TextMatchFilter())
+
 bot.infinity_polling()
    
