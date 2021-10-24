@@ -142,6 +142,7 @@ POWR_FUNCS={"Power On" : power_on_machine, "Power Off" : power_off_machine , "Re
 @bot.message_handler(commands=['login'])
 def login_url(message):
 
+    
     bot.send_chat_action(message.chat.id, 'typing')
     # Read user id from db
     data=''
@@ -151,13 +152,19 @@ def login_url(message):
         conn.close()
     except Error as e :
         print(e)
+
+    power_status = status.get_vmstat(proxmox, CONFIG['proxmox']['node'], data[0])['msg']['status']
     
-    # Get ssh login 
-    ipv4_address = status.get_local_ip(proxmox , CONFIG['proxmox']['node'], data[0] )
-    url = util.get_login_url(ipv4_address['msg'])
-    
-    msg = util.string_format(STRINGS['STR_LOGIN'], url)
-    bot.send_message(message.chat.id ,msg, parse_mode="MarkdownV2")
+    if power_status == 'running' :
+        # Get ssh login 
+        ipv4_address = status.get_local_ip(proxmox , CONFIG['proxmox']['node'], data[0] )
+        url = util.get_login_url(ipv4_address['msg'])
+        
+        msg = util.string_format(STRINGS['STR_LOGIN'], url)
+        bot.send_message(message.chat.id ,msg, parse_mode="MarkdownV2")
+    else:
+        msg = util.string_format(STRINGS['STR_LOGIN_POWERED_OFF'], '')
+        bot.send_message(message.chat.id ,msg, parse_mode="MarkdownV2")
 
 # - command handler for start and help 
 @bot.message_handler(func=lambda m: True)

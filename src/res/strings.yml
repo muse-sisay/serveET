@@ -19,3 +19,4 @@ STR_VM_STATUS: "\n\t *OS INFO* : _{}_ \n
 STR_VM_STATUS_IP : "\n\t \t _{}_ : {}"
 STR_VM_STATUS_POWER_ON_MSG : "\n\n Type _\"Power On\"_ to turn your vm *on*."
 STR_LOGIN : "To access your vm {} /control after login to view list of commands"
+STR_LOGIN_POWERED_OFF: "Power on your machine to get a login url"
