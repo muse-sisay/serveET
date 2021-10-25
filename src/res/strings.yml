@@ -14,7 +14,8 @@ STR_TERMS_OF_SERVICE: "*TERMS OF SERVICE* \n
                         \n
                         _Do you agree to terms of service?_
                         "
-STR_ALREADY_PROVISIONED: "You currently have a server assigned to your telegram id. Use /control to manage your server."      
+STR_ALREADY_PROVISIONED: "You currently have a server assigned to your telegram id. Use /control to manage your server." 
+STR_ALREADY_REQUESTED: "You have a pending request. Please wait until that request is done."        
 STR_TERMS_OF_SERVICE_ACCEPT : "I AGREE"
 STR_TERMS_OF_SERVICE_REJECT : "I DISAGREE"
 STR_SELECT_OS : "*OS SELECTION*\n

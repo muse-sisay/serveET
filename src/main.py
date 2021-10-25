@@ -36,15 +36,17 @@ def start(message):
 @bot.message_handler(commands=['provision'])
 def provision(message):
     
-    data=''
+    data_machine=None
+    data_request=None
     try : 
         conn = helper.create_connection(db_file)
-        data = helper.get_user_from_machine(conn, message.chat.id)
+        data_machine = helper.get_user_from_machine(conn, message.chat.id)
+        data_request = helper.get_request(conn,message.chat.id )
         conn.close()
     except sqlite3.Error as e :
         print(e)
-
-    if not data :
+        
+    if not ( data_machine or data_request):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
         itembtn1 = types.KeyboardButton(STRINGS['STR_TERMS_OF_SERVICE_ACCEPT'])
         itembtn2 = types.KeyboardButton(STRINGS['STR_TERMS_OF_SERVICE_REJECT'])
@@ -55,9 +57,13 @@ def provision(message):
         bot.set_state(message.chat.id, 1)
 
     else :
-        msg = util.string_format(STRINGS['STR_ALREADY_PROVISIONED'], '')
-        bot.send_message(message.chat.id, msg,  parse_mode="MarkdownV2")
-
+        if data_request :
+            msg = util.string_format(STRINGS['STR_ALREADY_REQUESTED'], '')
+            bot.send_message(message.chat.id, msg,  parse_mode="MarkdownV2")
+        elif data_machine :
+            msg = util.string_format(STRINGS['STR_ALREADY_PROVISIONED'], '')
+            bot.send_message(message.chat.id, msg,  parse_mode="MarkdownV2")
+            
 # TODO Cancel state
 
 @bot.message_handler(state=1)
