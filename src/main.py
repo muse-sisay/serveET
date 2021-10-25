@@ -35,9 +35,7 @@ def start(message):
 
 @bot.message_handler(commands=['provision'])
 def provision(message):
-    # check  if user already has a vm
-    # manage
-    # accept terms of service
+    
     data=''
     try : 
         conn = helper.create_connection(db_file)
@@ -214,11 +212,6 @@ def request_accepted (call) :
     data= get_request(requester_id)
     print(data)
     
-    # update request
-    update_request(requester_id, "accepted")
-    # insert server
-    insert_machine(data)
-
     # clone the vm 
     # TODO on a new thread
     status = clone_vm(data)
@@ -226,6 +219,11 @@ def request_accepted (call) :
     bot.answer_callback_query(call.id, "Request granted")
 
     if status['success'] == 1:
+        
+        # update request
+        update_request(requester_id, "accepted")
+        # insert server
+        insert_machine(data)
         # send message to requester
         # congraulations
         msg = util.string_format(STRINGS['STR_PROVISION_ACCEPTED'], data[1])
@@ -236,10 +234,17 @@ def request_accepted (call) :
         msg = util.string_format(msg, '')
         bot.edit_message_text (msg, call.message.chat.id, call.message.message_id, parse_mode="MarkdownV2")
     else :
+        # Update admin message
         msg = call.message.text.replace('pending', 'ERROR')
-        msg += "\n\n{status['msg]}"
+        msg += f"\n\n{status['msg']}"
         msg = util.string_format(msg, '')
         bot.edit_message_text (msg, call.message.chat.id, call.message.message_id, parse_mode="MarkdownV2")
+
+        # delete request 
+        delete_request(requester_id)
+        # notify user that thier request has failed due to server error
+        msg = util.string_format(STRINGS['STR_PROVISION_FAILED'],'')
+        bot.send_message(requester_id, msg, parse_mode="MarkdownV2")
 
 def clone_vm(data):
 
