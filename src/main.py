@@ -45,9 +45,9 @@ def provision(message):
         conn.close()
     except sqlite3.Error as e :
         print(e)
-        
+
     if not ( data_machine or data_request):
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
         itembtn1 = types.KeyboardButton(STRINGS['STR_TERMS_OF_SERVICE_ACCEPT'])
         itembtn2 = types.KeyboardButton(STRINGS['STR_TERMS_OF_SERVICE_REJECT'])
         markup.add(itembtn1 , itembtn2)
@@ -70,7 +70,7 @@ def provision(message):
 @bot.message_handler(text=[STRINGS['STR_TERMS_OF_SERVICE_ACCEPT'],STRINGS['STR_PROVISION_CONFIRMATION_NO']])
 def os_selection(message):
 
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True,one_time_keyboard=True,row_width = 2)
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width = 2, one_time_keyboard=True)
     [ markup.add(types.KeyboardButton(os['name'])) for os in CONFIG['template_vm']['template_vms']]
 
     msg = util.string_format(STRINGS['STR_SELECT_OS'], '')
@@ -83,7 +83,7 @@ def os_selection(message):
 @bot.message_handler(text=[ os['name'] for os in CONFIG['template_vm']['template_vms']])
 def confirmation(message):
     selection = message.text
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     itembtn1 = types.KeyboardButton(STRINGS['STR_PROVISION_CONFIRMATION_YES'])
     itembtn2 = types.KeyboardButton(STRINGS['STR_PROVISION_CONFIRMATION_NO'])
     markup.add(itembtn1, itembtn2)
@@ -107,7 +107,7 @@ def checkout(message):
    
     # send chekcout message to user
     msg= util.string_format(STRINGS['STR_PROVISION_CHECKOUT'], '')
-    bot.send_message(message.chat.id, msg, parse_mode="MarkdownV2")
+    bot.send_message(message.chat.id, msg, parse_mode="MarkdownV2" ,reply_markup=types.ReplyKeyboardRemove(True))
 
     # insert to request db
     insert_request(message)
