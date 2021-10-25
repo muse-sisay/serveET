@@ -226,6 +226,8 @@ def request_accepted (call) :
 
     if status['success'] == 1:
         
+        # increment vm id
+        increment_vm_id()
         # update request
         update_request(requester_id, "accepted")
         # insert server
@@ -256,8 +258,6 @@ def clone_vm(data):
 
     # get current vm id
     vm_id = get_vm_id()
-    # increment vm id
-    increment_vm_id()
 
     new_vm ={'newid': vm_id,
             'description':f'{data[1]} vm',
