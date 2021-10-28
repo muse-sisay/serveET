@@ -12,7 +12,7 @@ STR_TERMS_OF_SERVICE: "*TERMS OF SERVICE* \n
                         \n
                         *By clicking agree you agree* not to host bots, mine cryptocurrencies or run network scans on my home network. \n
                         \n
-                        _Do you agree to terms of service?_
+                        %Do you agree to terms of service?%
                         "
 STR_ALREADY_PROVISIONED: "You currently have a server assigned to your telegram id. Use /control to manage your server." 
 STR_ALREADY_REQUESTED: "You have a pending request. Please wait until that request is done."        
@@ -28,7 +28,7 @@ STR_PROVISION_CONFIRMATION_NO: "Change OS"
 STR_PROVISION_CHECKOUT  : "Your request has been *sent* to the admin.\n
                           \n
                           I will notify you once it's accepted. Because my admin is a _lazy human_ it might take up-to 1 hour for him to approve your request. If you don't get a confirmation within an hour feel free to shout at him @musesisay "
-STR_PROVISION_ACCEPTED : "*Congratulations* _{}_ ,\n
+STR_PROVISION_ACCEPTED : "*Congratulations* %{}% ,\n
                           \n
                           Your request has been approved. I will start provisioning your server right away. Type /login to get a login URL.\n
                           \n
@@ -40,7 +40,7 @@ STR_PROVISION_REQUEST: "*Date*: {} \n
                         *User ID*: {} {} \n
                         *STATUS* : {}\n
                         \n 
-                        *{}* would like access access to _{}_ server. Shall I grant the wish?
+                        *{}* would like access access to %{}% server. Shall I grant the wish?
                         " 
 STR_PROVISION_REQUEST_GRANT :  "YES"
 STR_PROVISION_REQUEST_DENY : "NO"                          
@@ -57,12 +57,12 @@ STR_VM_POWER_OFF : "Your server has powered *off*"
 STR_VM_POWER_REBOOT_START : "Your server is *rebooting*"
 STR_VM_POWER_REBOOT_FINISH : "Your server has finished *rebooting*"
 STR_VM_STATUS_POWER: "*SERVER STATUS* \n
-                      \t*STATUS*: _{}_"
-STR_VM_STATUS: "\n\t *OS INFO* : _{}_ \n
-                \t *UPTIME*: _{}_ \n
-                \t *Rx/Tx*: _{}_ / _{}_ \n
+                      \t*STATUS*: %{}%"
+STR_VM_STATUS: "\n\t *OS INFO* : %{}%% \n
+                \t *UPTIME*: %{}%% \n
+                \t *Rx/Tx*: %{}% / %{}% \n
                 \t *IP ADDRESS*"
-STR_VM_STATUS_IP : "\n\t \t _{}_ : {}"
-STR_VM_STATUS_POWER_ON_MSG : "\n\n Type _\"Power On\"_ to turn your server *on*."
+STR_VM_STATUS_IP : "\n\t \t %{}% : {}"
+STR_VM_STATUS_POWER_ON_MSG : "\n\n Type %\"Power On\"% to turn your server *on*."
 STR_LOGIN : "To access your server {} /control after login to view list of commands"
 STR_LOGIN_POWERED_OFF: "Power on your server to get a login url"

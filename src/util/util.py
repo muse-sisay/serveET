@@ -22,5 +22,6 @@ def get_login_url(host):
 
 def string_format(s, *args):
     s = s.format(*args)
-    s = re.sub(r"(\[|\]|\(|\)|\~|\>|\+|\-|\=|\||\{|\}|\.|\!|\?)", r'\\\g<0>',  s )
+    s = re.sub(r"(\[|\]|\(|\)|\~|\>|\+|\-|\=|\||\{|\}|\.|\!|\?|\_)", r'\\\g<0>',  s )
+    s = re.sub(r"%" ,"_", s)
     return s
