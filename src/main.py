@@ -226,12 +226,12 @@ def request_accepted (call) :
 
     if status['success'] == 1:
         
-        # increment vm id
-        increment_vm_id()
         # update request
         update_request(requester_id, "accepted")
         # insert server
         insert_machine(data)
+        # increment vm id
+        increment_vm_id()
         # send message to requester
         # congraulations
         msg = util.string_format(STRINGS['STR_PROVISION_ACCEPTED'], data[1])
