@@ -23,19 +23,22 @@ import sqlite3
 from pprint import pprint
 
 bot = telebot.TeleBot(CONFIG['bot']['token'])
-# logger = telebot.logger
-# telebot.logger.setLevel(logging.DEBUG)
+logger = telebot.logger
+telebot.logger.setLevel(logging.INFO)
 
 
-# - command handler for start and help 
+
 @bot.message_handler(commands=['start', 'help'])
 def start(message):
     msg = util.string_format(STRINGS['STR_START'], message.chat.first_name)
     bot.send_message(message.chat.id , msg , parse_mode="MarkdownV2")
+    logger.info(f"userid: {message.chat.id} sent command: /start")
 
 @bot.message_handler(commands=['provision'])
 def provision(message):
     
+    logger.info(f"userid: {message.chat.id} sent command: /provision")
+
     data_machine=None
     data_request=None
     try : 
@@ -44,7 +47,7 @@ def provision(message):
         data_request = helper.get_request(conn,message.chat.id )
         conn.close()
     except sqlite3.Error as e :
-        print(e)
+        logger.info(f"{message.chat.id} {e}")
 
     if not ( data_machine or data_request):
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
@@ -60,21 +63,26 @@ def provision(message):
         if data_request :
             msg = util.string_format(STRINGS['STR_ALREADY_REQUESTED'], '')
             bot.send_message(message.chat.id, msg,  parse_mode="MarkdownV2")
+            log_msg = "has a pending request."
         elif data_machine :
             msg = util.string_format(STRINGS['STR_ALREADY_PROVISIONED'], '')
             bot.send_message(message.chat.id, msg,  parse_mode="MarkdownV2")
-            
+            log_msg=("has a server allocated.")
+        
+        logger.info(f"userid: {message.chat.id} {log_msg}")
 # TODO Cancel state
 
 @bot.message_handler(state=1)
 @bot.message_handler(text=[STRINGS['STR_TERMS_OF_SERVICE_ACCEPT'],STRINGS['STR_PROVISION_CONFIRMATION_NO']])
 def os_selection(message):
 
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width = 2, one_time_keyboard=True)
+    logger.info(f"userid: {message.chat.id} agreed to TERMS OF SERVICE")
+
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width = len(CONFIG['template_vm']['template_vms']), one_time_keyboard=True)
     [ markup.add(types.KeyboardButton(os['name'])) for os in CONFIG['template_vm']['template_vms']]
 
     msg = util.string_format(STRINGS['STR_SELECT_OS'], '')
-    bot.send_message(message.chat.id, msg,reply_markup=markup ,   parse_mode="MarkdownV2")
+    bot.send_message(message.chat.id, msg,reply_markup=markup , parse_mode="MarkdownV2")
     bot.set_state(message.chat.id, 2)
 
 # TODO TERMS OF SERVICE DISAGREE
@@ -82,7 +90,11 @@ def os_selection(message):
 @bot.message_handler(state=2)
 @bot.message_handler(text=[ os['name'] for os in CONFIG['template_vm']['template_vms']])
 def confirmation(message):
+
     selection = message.text
+
+    logger.info(f"userid: {message.chat.id} selected {selection} as operating system.")
+
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     itembtn1 = types.KeyboardButton(STRINGS['STR_PROVISION_CONFIRMATION_YES'])
     itembtn2 = types.KeyboardButton(STRINGS['STR_PROVISION_CONFIRMATION_NO'])
@@ -100,11 +112,14 @@ def confirmation(message):
 
 @bot.message_handler(state=3, text=[STRINGS['STR_PROVISION_CONFIRMATION_NO']])
 def back_to_os_selection(message):
+    logger.info(f"userid: {message.chat.id} sent msg: {STRINGS['STR_PROVISION_CONFIRMATION_NO']}")
     bot.set_state(message.chat.id, 1)
 
 @bot.message_handler(state=3, text=[STRINGS['STR_PROVISION_CONFIRMATION_YES']])
 def checkout(message):
-   
+    
+    logger.info(f"userid: {message.chat.id} confirmed request.")
+
     # send chekcout message to user
     msg= util.string_format(STRINGS['STR_PROVISION_CHECKOUT'], '')
     bot.send_message(message.chat.id, msg, parse_mode="MarkdownV2" ,reply_markup=types.ReplyKeyboardRemove(True))
@@ -117,14 +132,16 @@ def checkout(message):
     bot.delete_state(message.chat.id)
 
 def insert_request(message):
-
+    
     info = get_requester_info(message)
     try :
         conn= helper.create_connection(db_file)
         helper.insert_request(conn, info)
         conn.close()
     except sqlite3.Error as e :
-        print(e) # print for now
+        logger.info(f"{message.chat.id} {e}")
+    
+    logger.info(f"userid: {message.chat.id} insert request into database") # TODO should be logged by db module
 
 def get_request(requester_id):
 
@@ -134,7 +151,7 @@ def get_request(requester_id):
         conn.close()
         return data
     except sqlite3.Error as e :
-        print(e) # print for now
+        logger.info(f"{requester_id} {e}")
 
 def update_request( requester_id , status):
     
@@ -144,7 +161,7 @@ def update_request( requester_id , status):
         conn.close()
         return data
     except sqlite3.Error as e :
-        print(e) # print for now
+        logger.info(f"{requester_id} {e}")
 
 def insert_machine(data):
     try :
@@ -153,7 +170,7 @@ def insert_machine(data):
         conn.close()
         return data
     except sqlite3.Error as e :
-        print(e) # print for now
+        logger.info(e)
 
 def get_vm_id():
     try :
@@ -162,7 +179,7 @@ def get_vm_id():
         conn.close()
         return data
     except sqlite3.Error as e :
-        print(e) # print for now
+        logger.info(e)
 
 def increment_vm_id():
     try :
@@ -208,6 +225,8 @@ def nofify_admin(message):
     
     bot.send_message(CONFIG['bot']['admin_id'], msg, reply_markup=markup, parse_mode="MarkdownV2")
 
+    logger.info(f"userid: {message.chat.id} admin notified of request.")
+
 
 @bot.callback_query_handler(func=lambda call: util.string_to_dict(call.data)['status'] =="accepted")
 def request_accepted (call) :
@@ -216,11 +235,13 @@ def request_accepted (call) :
 
     # read request form db
     data= get_request(requester_id)
-    print(data)
+    
+    logger.info(f"userid: {data['requester_id']} admin approved request.")
     
     # clone the vm 
     # TODO on a new thread
     status = clone_vm(data)
+    logger.info(f"userid: {data['requester_id']} vm cloned .")
 
     bot.answer_callback_query(call.id, "Request granted")
 
@@ -273,12 +294,12 @@ def clone_vm(data):
 
     return  msg
     
-
-
 @bot.callback_query_handler(func=lambda call: util.string_to_dict(call.data)['status'] =="denied")
 def request_denied (call) :
 
     requester_id = util.string_to_dict(call.data)['requester_id']
+    
+    logger.info(f"userid: {requester_id} admin denied request.")
 
     # remove request
     delete_request(requester_id)
@@ -296,6 +317,9 @@ def request_denied (call) :
 
 @bot.message_handler(commands=['control'])
 def control(message):
+    
+    logger.info(f"userid: {message.chat.id} sent command: /control")
+
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     itembtn1 = types.KeyboardButton('Power On')
     itembtn2 = types.KeyboardButton('Power Off')
@@ -318,7 +342,7 @@ def power_control(message):
         data = helper.get_user_from_machine(conn, message.chat.id)
         conn.close()
     except sqlite3.Error as e :
-        print(e)
+        logger.info(f"{message.chat.id} {e}")
 
 
     if data :
@@ -327,8 +351,12 @@ def power_control(message):
     else :
         msg = util.string_format( STRINGS['STR_NO_VM_ASSIGNED'], '')
         bot.send_message(message.chat.id,msg, parse_mode="MarkdownV2")
+        logger.info(f"userid: {message.chat.id} tried  to {message.text} the machine")
+        logger.info(f"userid: {message.chat.id} has no access to server.")
 
 def power_on_machine(message , data):
+
+    logger.info(f"userid: {message.chat.id} powered on machine.")
 
     msg = power_op.power_on(proxmox , CONFIG['proxmox']['node'] , data[0]) 
     if msg['success'] == 1 :
@@ -341,6 +369,8 @@ def power_on_machine(message , data):
 
 def power_off_machine(message, data):
 
+    logger.info(f"userid: {message.chat.id} powered off machine.")
+
     msg = power_op.power_off(proxmox , CONFIG['proxmox']['node'] , data[0])
     if msg['success'] == 1 :
         # Machine has been turned  off
@@ -350,6 +380,8 @@ def power_off_machine(message, data):
         bot.send_message(message.chat.id, msg['msg'])
 
 def reboot_machine(message ,  data):
+
+    logger.info(f"userid: {message.chat.id} rebooted machine")
 
     msg = power_op.reboot(proxmox , CONFIG['proxmox']['node'] , data[0])
     if msg['success'] == 1 :
@@ -406,7 +438,8 @@ POWR_FUNCS={"Power On" : power_on_machine, "Power Off" : power_off_machine , "Re
 @bot.message_handler(commands=['login'])
 def login_url(message):
 
-    
+    logger.info(f"userid: {message.chat.id} ent command: /login")
+
     bot.send_chat_action(message.chat.id, 'typing')
     # Read user id from db
     data=''
@@ -415,21 +448,25 @@ def login_url(message):
         data = helper.get_user_from_machine(conn, message.chat.id)
         conn.close()
     except sqlite3.Error as e :
-        print(e)
+        logger.info(f"{message.chat.id} {e}")
 
-    power_status = status.get_vmstat(proxmox, CONFIG['proxmox']['node'], data[0])['msg']['status']
-    
-    if power_status == 'running' :
-        # Get ssh login 
-        ipv4_address = status.get_local_ip(proxmox , CONFIG['proxmox']['node'], data[0] )
-        url = util.get_login_url(ipv4_address['msg'])
+    stat = status.get_vmstat(proxmox, CONFIG['proxmox']['node'], data[0])
+    if stat['success'] == 1 :
+        power_status = stat['msg']['status']
         
-        msg = util.string_format(STRINGS['STR_LOGIN'], url)
-        bot.send_message(message.chat.id ,msg, parse_mode="MarkdownV2")
-    else:
-        msg = util.string_format(STRINGS['STR_LOGIN_POWERED_OFF'], '')
-        bot.send_message(message.chat.id ,msg, parse_mode="MarkdownV2")
-
+        if power_status == 'running' :
+            # Get ssh login 
+            ipv4_address = status.get_local_ip(proxmox , CONFIG['proxmox']['node'], data[0] )
+            url = util.get_login_url(ipv4_address['msg'])
+            
+            msg = util.string_format(STRINGS['STR_LOGIN'], url)
+            bot.send_message(message.chat.id ,msg, parse_mode="MarkdownV2")
+        else:
+            msg = util.string_format(STRINGS['STR_LOGIN_POWERED_OFF'], '')
+            bot.send_message(message.chat.id ,msg, parse_mode="MarkdownV2")
+    else :
+        pass 
+   
 # - command handler for start and help 
 @bot.message_handler(func=lambda m: True)
 def maintenance(message):
